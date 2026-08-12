@@ -5,6 +5,7 @@ import "./location.css";
 import "./guide.css";
 import "./reasons.css";
 import "./theme.css";
+import "./directions.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
