@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Lang = "en" | "ko" | "ja" | "zh";
 type Kind = "all" | "swim" | "surf" | "sup" | "kayak" | "yacht" | "walk";
+type OriginId = "gwangalli" | "haeundae" | "seomyeon" | "busanStation" | "nampo" | "gijang";
 type Localized = Record<Lang, string>;
 type Spot = {
   id:string; name:Localized; activity:Localized; kind:Exclude<Kind,"all">; icon:string;
@@ -19,6 +20,20 @@ const ui = {
 } as const;
 
 const L=(en:string,ko:string,ja:string,zh:string):Localized=>({en,ko,ja,zh});
+const locationUi={
+  en:{origin:"Starting point",choose:"Choose an area",device:"Use device location",locating:"Finding your location…",located:"Device location selected",denied:"Location unavailable — using selected area",straight:"straight-line"},
+  ko:{origin:"출발 지역",choose:"지역을 선택하세요",device:"현재 기기 위치 사용",locating:"현재 위치 확인 중…",located:"현재 기기 위치로 설정했어요",denied:"위치를 확인하지 못해 선택 지역을 유지해요",straight:"직선거리"},
+  ja:{origin:"出発エリア",choose:"エリアを選択",device:"端末の現在地を使う",locating:"現在地を確認中…",located:"端末の現在地を設定しました",denied:"現在地を取得できないため、選択中のエリアを使います",straight:"直線距離"},
+  zh:{origin:"出发区域",choose:"请选择区域",device:"使用设备当前位置",locating:"正在获取当前位置…",located:"已设为设备当前位置",denied:"无法获取当前位置，将继续使用所选区域",straight:"直线距离"},
+} as const;
+const origins:{id:OriginId;name:Localized;lat:number;lon:number}[]=[
+  {id:"gwangalli",name:L("Gwangalli","광안리","広安里（クァンアンリ）","广安里"),lat:35.1532,lon:129.1187},
+  {id:"haeundae",name:L("Haeundae","해운대","海雲台（ヘウンデ）","海云台"),lat:35.1631,lon:129.1635},
+  {id:"seomyeon",name:L("Seomyeon","서면","西面（ソミョン）","西面"),lat:35.1578,lon:129.0592},
+  {id:"busanStation",name:L("Busan Station","부산역","釜山駅","釜山站"),lat:35.1151,lon:129.0414},
+  {id:"nampo",name:L("Nampo-dong","남포동","南浦洞（ナンポドン）","南浦洞"),lat:35.0975,lon:129.0346},
+  {id:"gijang",name:L("Gijang","기장","機張（キジャン）","机张"),lat:35.2446,lon:129.2223},
+];
 const base:Spot[]=[
   {id:"gwangalli",name:L("Gwangalli Beach","광안리해수욕장","広安里（クァンアンリ）海水浴場","广安里海水浴场"),activity:L("Sunset SUP","노을 SUP","夕暮れのSUP","夕阳桨板"),kind:"sup",icon:"🏄",lat:35.1532,lon:129.1187,distance:1.2,water:23.8,wave:.35,wind:2.4,temp:26,rain:0,crowd:38,group:[1,6]},
   {id:"songjeong",name:L("Songjeong Beach","송정해수욕장","松亭（ソンジョン）海水浴場","松亭海水浴场"),activity:L("Beginner surfing","초보 서핑","初心者向けサーフィン","初学者冲浪"),kind:"surf",icon:"🏄‍♀️",lat:35.1786,lon:129.1997,distance:7.6,water:24.1,wave:.85,wind:3.8,temp:27,rain:0,crowd:44,group:[1,4]},
@@ -38,6 +53,11 @@ function seaScore(s:Spot){
   if(s.kind==="swim") return Math.max(0,100-Math.abs(s.water-25)*7-s.wave*45-Math.max(0,s.wind-5)*12);
   if(s.kind==="yacht") return Math.max(0,100-Math.abs(s.wind-4)*7-s.wave*32);
   return Math.max(0,100-Math.max(0,s.wave-1)*25-Math.max(0,s.wind-7)*10);
+}
+function distanceKm(a:{lat:number;lon:number},b:{lat:number;lon:number}){
+  const rad=(n:number)=>n*Math.PI/180; const dLat=rad(b.lat-a.lat); const dLon=rad(b.lon-a.lon);
+  const h=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLon/2)**2;
+  return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
 }
 function score(s:Spot,people:number,kind:Kind){
   const weather=Math.max(0,100-Math.abs(s.temp-25)*4-s.rain*7-Math.max(0,s.wind-8)*6);
@@ -60,16 +80,18 @@ async function liveSpot(s:Spot):Promise<Spot>{
 }
 
 export default function Home(){
-  const [lang,setLang]=useState<Lang>("en"); const [people,setPeople]=useState(2); const [kind,setKind]=useState<Kind>("all"); const [spots,setSpots]=useState(base); const [loading,setLoading]=useState(false); const [live,setLive]=useState(false); const [updated,setUpdated]=useState(""); const [open,setOpen]=useState<string|null>(null); const t=ui[lang];
+  const [lang,setLang]=useState<Lang>("en"); const [people,setPeople]=useState(2); const [kind,setKind]=useState<Kind>("all"); const [spots,setSpots]=useState(base); const [loading,setLoading]=useState(false); const [live,setLive]=useState(false); const [updated,setUpdated]=useState(""); const [open,setOpen]=useState<string|null>(null); const [originId,setOriginId]=useState<OriginId>("gwangalli"); const [origin,setOrigin]=useState({lat:origins[0].lat,lon:origins[0].lon}); const [geoState,setGeoState]=useState<"idle"|"loading"|"success"|"error">("idle"); const t=ui[lang]; const lt=locationUi[lang];
   const refresh=async()=>{setLoading(true);try{const next=await Promise.all(base.map(liveSpot));setSpots(next);setLive(true)}catch{setSpots(base);setLive(false)}finally{setUpdated(new Intl.DateTimeFormat(lang,{hour:"2-digit",minute:"2-digit"}).format(new Date()));setLoading(false)}};
+  const selectOrigin=(id:OriginId)=>{const next=origins.find(x=>x.id===id)!;setOriginId(id);setOrigin({lat:next.lat,lon:next.lon});setGeoState("idle")};
+  const useDeviceLocation=()=>{setGeoState("loading");if(!navigator.geolocation){setGeoState("error");return}navigator.geolocation.getCurrentPosition(({coords})=>{setOrigin({lat:coords.latitude,lon:coords.longitude});setGeoState("success")},()=>setGeoState("error"),{enableHighAccuracy:true,timeout:8000,maximumAge:300000})};
   useEffect(()=>{document.documentElement.lang=lang==="zh"?"zh-CN":lang;refresh()},[]);
-  const ranked=useMemo(()=>spots.map(s=>({...s,scores:score(s,people,kind)})).sort((a,b)=>b.scores.total-a.scores.total),[spots,people,kind]); const best=ranked[0];
+  const ranked=useMemo(()=>spots.map(s=>{const located={...s,distance:distanceKm(origin,s)};return {...located,scores:score(located,people,kind)}}).sort((a,b)=>b.scores.total-a.scores.total),[spots,people,kind,origin]); const best=ranked[0];
   const kinds:Kind[]=["all","swim","surf","sup","kayak","yacht","walk"];
   return <main>
     <header className="nav"><a className="logo" href="#top"><span>〰</span>{t.name}</a><div className="language">{(["en","ko","ja","zh"] as Lang[]).map(x=><button className={lang===x?"on":""} onClick={()=>setLang(x)} key={x}>{x==="en"?"EN":x==="ko"?"한국어":x==="ja"?"日本語":"中文"}</button>)}</div></header>
-    <section className="compare-hero" id="top"><div><p className="overline">BUSAN · 10 COASTAL SPOTS</p><h1>{t.title}<br/><em>{t.accent}</em></h1><p>{t.sub}</p></div><div className="filters"><div className="people-filter"><span>{t.group}</span><div><button onClick={()=>setPeople(Math.max(1,people-1))}>−</button><b>{people}</b><small>{t.people}</small><button onClick={()=>setPeople(Math.min(10,people+1))}>＋</button></div></div><div className="activity-filter"><span>{t.goal}</span><div>{kinds.map(k=><button className={kind===k?"active":""} onClick={()=>setKind(k)} key={k}>{t[k]}</button>)}</div></div></div></section>
+    <section className="compare-hero" id="top"><div><p className="overline">BUSAN · 10 COASTAL SPOTS</p><h1>{t.title}<br/><em>{t.accent}</em></h1><p>{t.sub}</p></div><div className="filters"><div className="origin-filter"><span>{lt.origin}</span><div className="origin-actions"><select value={originId} onChange={e=>selectOrigin(e.target.value as OriginId)} aria-label={lt.choose}>{origins.map(x=><option key={x.id} value={x.id}>{x.name[lang]}</option>)}</select><button className={geoState==="success"?"using-device":""} onClick={useDeviceLocation} disabled={geoState==="loading"}>⌖ {geoState==="loading"?lt.locating:lt.device}</button></div>{geoState!=="idle"&&<small className={`geo-message ${geoState}`}>{geoState==="success"?`✓ ${lt.located}`:geoState==="error"?`! ${lt.denied}`:lt.locating}</small>}</div><div className="people-filter"><span>{t.group}</span><div><button onClick={()=>setPeople(Math.max(1,people-1))}>−</button><b>{people}</b><small>{t.people}</small><button onClick={()=>setPeople(Math.min(10,people+1))}>＋</button></div></div><div className="activity-filter"><span>{t.goal}</span><div>{kinds.map(k=><button className={kind===k?"active":""} onClick={()=>setKind(k)} key={k}>{t[k]}</button>)}</div></div></div></section>
     <section className="ranking"><div className="rank-top"><div><span>{t.live}</span><h2>{t.best}</h2><p className={live?"feed live":"feed"}>● {live?t.dataLive:t.dataFallback} · {t.updated} {updated||"--:--"}</p></div><button onClick={refresh} disabled={loading}>↻ {loading?t.loading:t.refresh}</button></div>
-      <article className="winner"><div className="winner-visual"><span>{best.icon}</span><b>#1 · {best.activity[lang]}</b></div><div className="winner-info"><div className="winner-title"><div><small>{best.distance.toFixed(1)} km</small><h3>{best.name[lang]}</h3></div><strong>{best.scores.total}<small>/100</small></strong></div><p>{t.recommend}</p><div className="conditions"><span>🌡 {best.temp.toFixed(1)}°C</span><span>🌊 {best.wave.toFixed(1)}m</span><span>💨 {best.wind.toFixed(1)}m/s</span><span>👥 {best.crowd}% {t.estimated}</span></div><div className="bars">{([["weather",best.scores.weather],["sea",best.scores.sea],["crowd",best.scores.crowd],["distance",best.scores.distance],["groupFit",best.scores.group]] as [keyof typeof t,number][]).map(([label,value])=><div key={label}><span>{t[label]} <b>{value}</b></span><i><em style={{width:`${value}%`}}/></i></div>)}</div><div className="win-actions"><button onClick={()=>setOpen(open===best.id?null:best.id)}>{t.details} →</button><a href={`https://www.google.com/maps/search/?api=1&query=${best.lat},${best.lon}`} target="_blank" rel="noreferrer">{t.route} ↗</a></div>{open===best.id&&<div className="score-note">20% {t.weather} + 30% {t.sea} + 15% {t.crowd} + 12% {t.distance} + 8% {t.groupFit} + 15% {t.goal}</div>}</div></article>
+      <article className="winner"><div className="winner-visual"><span>{best.icon}</span><b>#1 · {best.activity[lang]}</b></div><div className="winner-info"><div className="winner-title"><div><small>{best.distance.toFixed(1)} km · {lt.straight}</small><h3>{best.name[lang]}</h3></div><strong>{best.scores.total}<small>/100</small></strong></div><p>{t.recommend}</p><div className="conditions"><span>🌡 {best.temp.toFixed(1)}°C</span><span>🌊 {best.wave.toFixed(1)}m</span><span>💨 {best.wind.toFixed(1)}m/s</span><span>👥 {best.crowd}% {t.estimated}</span></div><div className="bars">{([["weather",best.scores.weather],["sea",best.scores.sea],["crowd",best.scores.crowd],["distance",best.scores.distance],["groupFit",best.scores.group]] as [keyof typeof t,number][]).map(([label,value])=><div key={label}><span>{t[label]} <b>{value}</b></span><i><em style={{width:`${value}%`}}/></i></div>)}</div><div className="win-actions"><button onClick={()=>setOpen(open===best.id?null:best.id)}>{t.details} →</button><a href={`https://www.google.com/maps/search/?api=1&query=${best.lat},${best.lon}`} target="_blank" rel="noreferrer">{t.route} ↗</a></div>{open===best.id&&<div className="score-note">20% {t.weather} + 30% {t.sea} + 15% {t.crowd} + 12% {t.distance} + 8% {t.groupFit} + 15% {t.goal}</div>}</div></article>
       <div className="list-head"><div><span>{t.results}</span><h2>{t.compare}</h2></div><small>{ranked.length} SPOTS</small></div><div className="result-list">{ranked.map((s,i)=><article key={s.id} className={s.scores.unsafe?"unsafe":""}><div className="place-rank">{String(i+1).padStart(2,"0")}</div><div className="place-icon">{s.icon}</div><div className="place-main"><small>{s.activity[lang]} · {s.distance.toFixed(1)} km</small><h3>{s.name[lang]}</h3><div><span>{t.water} {s.water.toFixed(1)}°C</span><span>{t.wave} {s.wave.toFixed(1)}m</span><span>{t.wind} {s.wind.toFixed(1)}m/s</span><span>{t.crowd} {s.crowd}%</span></div></div><div className="place-score"><b>{s.scores.total}</b><small>{s.scores.unsafe?t.caution:t.safe}</small></div></article>)}</div>
     </section>
     <section className="method"><h2>{t.why}</h2><div><span><b>30%</b>{t.sea}</span><span><b>20%</b>{t.weather}</span><span><b>15%</b>{t.crowd}</span><span><b>15%</b>{t.goal}</span><span><b>12%</b>{t.distance}</span><span><b>8%</b>{t.groupFit}</span></div><p>ⓘ {t.crowdNote}</p><small>{t.source}</small></section>

@@ -1,0 +1,45 @@
+.origin-filter {
+  border-bottom: 1px solid #e5ecee;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+}
+
+.origin-filter > span {
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.origin-actions {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: 1fr auto;
+  margin-top: 10px;
+}
+
+.origin-actions select,
+.origin-actions button {
+  background: white;
+  border: 1px solid #c8d9dc;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 0 11px;
+}
+
+.origin-actions select {
+  color: var(--ink);
+  width: 100%;
+}
+
+.origin-actions button { background: #eef6f5; }
+.origin-actions button.using-device { background: var(--navy); border-color: var(--navy); color: white; }
+.origin-actions button:disabled { cursor: wait; opacity: .55; }
+.geo-message { color: #71868c; display: block; font-size: 8px; margin-top: 8px; }
+.geo-message.success { color: #17806e; }
+.geo-message.error { color: #b35d42; }
+
+@media (max-width: 480px) {
+  .origin-actions { grid-template-columns: 1fr; }
+  .origin-actions button { width: 100%; }
+}
