@@ -1,0 +1,57 @@
+.theme-panel {
+  background: linear-gradient(135deg, #e9fbf7, #f4f0df);
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 22px;
+  color: var(--ink);
+  display: grid;
+  gap: 28px;
+  grid-template-columns: .78fr 1.22fr;
+  margin-top: 22px;
+  padding: 34px;
+}
+
+.theme-panel.theme-fishing { background: linear-gradient(135deg, #d8eef3, #f2e8d2); }
+.theme-panel.theme-kids { background: linear-gradient(135deg, #fff0d9, #e6f7ef); }
+.theme-panel.theme-activity { background: linear-gradient(135deg, #dff8f4, #dceef8); }
+.theme-panel.theme-relax { background: linear-gradient(135deg, #eef3df, #e3f3f1); }
+
+.theme-copy > span {
+  color: #397b83;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.theme-copy h2 {
+  font-size: clamp(25px, 3vw, 37px);
+  letter-spacing: -.05em;
+  line-height: 1.08;
+  margin: 10px 0 14px;
+}
+
+.theme-copy p {
+  color: #607780;
+  font-size: 10px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.theme-cards { display: grid; gap: 9px; }
+.theme-cards article {
+  align-items: flex-start;
+  background: rgba(255,255,255,.84);
+  border: 1px solid rgba(17,48,68,.1);
+  border-radius: 13px;
+  display: grid;
+  gap: 13px;
+  grid-template-columns: 34px 1fr;
+  padding: 16px;
+}
+.theme-cards article > span { font-size: 23px; }
+.theme-cards h3 { font-size: 13px; margin: 0 0 5px; }
+.theme-cards p { color: #607780; font-size: 9px; line-height: 1.55; margin: 0; }
+
+@media (max-width: 800px) {
+  .theme-panel { grid-template-columns: 1fr; padding: 27px 20px; }
+}
