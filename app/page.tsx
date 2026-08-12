@@ -19,6 +19,9 @@ const activities = [
     wind: 2.4,
     crowd: 32,
     level: "초보 추천",
+    idealMin: 1,
+    idealMax: 2,
+    maxPeople: 6,
     tags: ["처음이에요", "가볍게", "아이와 함께"],
     reason: "잔잔한 파도와 약한 바람으로 처음 타기 가장 편안해요.",
   },
@@ -36,6 +39,9 @@ const activities = [
     wind: 3.1,
     crowd: 54,
     level: "누구나",
+    idealMin: 4,
+    idealMax: 8,
+    maxPeople: 10,
     tags: ["처음이에요", "가볍게", "아이와 함께"],
     reason: "맑은 시야와 적당한 바람이 있어 노을 항해에 좋아요.",
   },
@@ -53,6 +59,9 @@ const activities = [
     wind: 3.8,
     crowd: 41,
     level: "보통",
+    idealMin: 2,
+    idealMax: 4,
+    maxPeople: 8,
     tags: ["가볍게", "짜릿하게"],
     reason: "수온이 따뜻하고 시야가 좋아 바다 위 풍경을 즐기기 좋아요.",
   },
@@ -65,15 +74,32 @@ export default function Home() {
   const [location, setLocation] = useState("광안리 인근");
   const [locating, setLocating] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [people, setPeople] = useState(2);
 
   const ranked = useMemo(() => {
     return activities
-      .map((activity) => ({
-        ...activity,
-        match: Math.min(98, activity.score + (activity.tags.includes(preference) ? 3 : -5)),
-      }))
+      .map((activity) => {
+        const preferenceScore = activity.tags.includes(preference) ? 3 : -5;
+        const groupScore = people > activity.maxPeople
+          ? -24
+          : people >= activity.idealMin && people <= activity.idealMax
+            ? 7
+            : people < activity.idealMin
+              ? -Math.min(10, (activity.idealMin - people) * 3)
+              : -Math.min(12, (people - activity.idealMax) * 2);
+
+        return {
+          ...activity,
+          match: Math.max(55, Math.min(98, activity.score + preferenceScore + groupScore)),
+          groupFit: people > activity.maxPeople
+            ? `${activity.maxPeople}명 이하 권장`
+            : people >= activity.idealMin && people <= activity.idealMax
+              ? `${people}명에게 딱 맞아요`
+              : `${activity.idealMin}–${activity.idealMax}명 최적`,
+        };
+      })
       .sort((a, b) => b.match - a.match);
-  }, [preference]);
+  }, [preference, people]);
 
   function findLocation() {
     setLocating(true);
@@ -131,6 +157,27 @@ export default function Home() {
               ))}
             </div>
           </div>
+          <div className="group-picker">
+            <div className="group-copy">
+              <span className="group-icon" aria-hidden="true">👥</span>
+              <div><strong>현재 인원</strong><small>함께 활동할 전체 인원을 알려주세요</small></div>
+            </div>
+            <div className="stepper">
+              <button onClick={() => setPeople((value) => Math.max(1, value - 1))} disabled={people === 1} aria-label="인원 한 명 줄이기">−</button>
+              <label>
+                <span className="sr-only">현재 인원</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={people}
+                  onChange={(event) => setPeople(Math.max(1, Math.min(10, Number(event.target.value) || 1)))}
+                />
+                <em>명</em>
+              </label>
+              <button onClick={() => setPeople((value) => Math.min(10, value + 1))} disabled={people === 10} aria-label="인원 한 명 늘리기">＋</button>
+            </div>
+          </div>
         </div>
 
         <div className="sea-window" aria-label="오늘 부산 바다 상태">
@@ -155,20 +202,21 @@ export default function Home() {
       <section className="recommendation">
         <div className="section-heading">
           <div>
-            <span className="kicker">오늘의 1순위</span>
+            <span className="kicker">{people}명 기준 오늘의 1순위</span>
             <h2>{best.title}</h2>
           </div>
           <div className="match-ring"><strong>{best.match}</strong><span>%<br />적합</span></div>
         </div>
 
-        <div className="best-card">
+        <div className="best-card" aria-live="polite">
           <div className="best-visual">
             <span className="big-emoji" aria-hidden="true">{best.emoji}</span>
             <span className="visual-label">바다 위에서 보는 광안대교</span>
           </div>
           <div className="best-content">
             <div className="reason-label">추천하는 이유</div>
-            <p className="reason">“{best.reason}”</p>
+            <p className="reason">“{best.reason} {people}명이 함께 즐기기에도 {people >= best.idealMin && people <= best.idealMax ? "딱 좋은 구성" : "이용 가능한 구성"}이에요.”</p>
+            <div className="group-verdict"><span>👥</span><strong>{best.groupFit}</strong><small>최대 {best.maxPeople}명</small></div>
             <div className="metrics">
               <div><span>🌡️ 수온</span><strong>{best.water}°C</strong><small>쾌적</small></div>
               <div><span>💨 바람</span><strong>{best.wind}m/s</strong><small>약함</small></div>
@@ -207,6 +255,7 @@ export default function Home() {
                 <span className="activity-place">{activity.place} · {activity.distance}km</span>
                 <h3>{activity.title}</h3>
                 <p>{activity.reason}</p>
+                <div className="group-fit"><span>👥 {activity.groupFit}</span><small>최대 {activity.maxPeople}명</small></div>
                 <div className="activity-meta"><span>{activity.level}</span><span>{activity.time}</span></div>
               </div>
             </article>
@@ -234,7 +283,7 @@ export default function Home() {
           <i>+</i>
           <div><span>03</span><strong>나와의 거리</strong><small>현재 위치 · 이동시간</small></div>
           <i>+</i>
-          <div><span>04</span><strong>현장 분위기</strong><small>혼잡도 · 내 취향</small></div>
+          <div><span>04</span><strong>일행과 분위기</strong><small>현재 인원 · 혼잡도 · 취향</small></div>
         </div>
         <p className="data-note"><span>i</span> 현재 화면은 서비스 검증용 예시 데이터입니다. 실제 운영 시 기상청·해양수산부·부산시 데이터와 현장 혼잡 정보를 연동합니다.</p>
       </section>
