@@ -16,7 +16,7 @@ const placeSeeds:PlaceSeed[]=[
   {id:"ilgwang",names:["Ilgwang Beach","일광해수욕장","日光海水浴場","日光海水浴场"],lat:35.2593,lon:129.2331,icon:"🤿",kind:"swim",categories:["relax","kids"],crowd:21,group:[1,8],address:"부산 기장군 일광읍 삼성3길 17",source:"https://www.visitbusan.net"},
   {id:"oryukdo",names:["Oryukdo Skywalk","오륙도 해맞이공원","五六島スカイウォーク","五六岛天空步道"],lat:35.1008,lon:129.1238,icon:"🥾",kind:"walk",categories:["relax","kids"],crowd:33,group:[1,10],address:"부산 남구 오륙도로 137",source:"https://www.visitbusan.net"},
   {id:"taejongdae",names:["Taejongdae Coast","태종대 해안","太宗台海岸","太宗台海岸"],lat:35.0526,lon:129.0872,icon:"🌊",kind:"walk",categories:["relax","kids"],crowd:27,group:[1,10],address:"부산 영도구 전망로 24",source:"https://www.visitbusan.net"},
-  {id:"gijang",names:["Gongsu Fishing Village","기장 공수어촌체험마을","機張公須漁村","机张公须渔村"],lat:35.1849,lon:129.2079,icon:"🎣",kind:"walk",categories:["kids","activity"],crowd:18,group:[2,10],address:"부산 기장군 기장읍 공수1길 18",source:"https://cms.seantour.com/BS003/index.do"},
+  {id:"gijang",names:["Gongsu Fishing Village","기장 공수어촌체험마을","機張公須漁村","机张公须渔村"],lat:35.1849,lon:129.2079,icon:"🎣",kind:"walk",categories:["kids"],crowd:18,group:[2,10],address:"부산 기장군 기장읍 공수1길 18",source:"https://cms.seantour.com/BS003/index.do"},
   {id:"amnam",names:["Amnam Park Breakwater","암남공원 방파제","岩南公園防波堤","岩南公园防波堤"],lat:35.0617,lon:129.018,icon:"🎣",kind:"fishing",categories:["fishing","relax"],crowd:31,group:[1,4],address:"부산 서구 암남동 620-4",source:"https://www.visitbusan.net/kr/index.do?menuCd=DOM_000000203012001000&uc_seq=790"},
 ];
 
@@ -47,6 +47,7 @@ export async function ensureCatalog(){
     d1.prepare("CREATE INDEX IF NOT EXISTS idx_snapshots_place_time ON condition_snapshots(place_id, observed_at)"),
   ]);
   await d1.batch(placeSeeds.map(p=>d1.prepare("INSERT OR IGNORE INTO places (id,name_en,name_ko,name_ja,name_zh,latitude,longitude,icon,activity_kind,categories,baseline_crowd,group_min,group_max,address_ko,source_url,active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)").bind(p.id,...p.names,p.lat,p.lon,p.icon,p.kind,JSON.stringify(p.categories),p.crowd,p.group[0],p.group[1],p.address,p.source)));
+  await d1.batch(placeSeeds.map(p=>d1.prepare("UPDATE places SET activity_kind = ?, categories = ? WHERE id = ?").bind(p.kind,JSON.stringify(p.categories),p.id)));
   await d1.batch(activitySeeds.map(a=>d1.prepare("INSERT OR IGNORE INTO activities (id,place_id,title_en,title_ko,title_ja,title_zh,description_en,description_ko,description_ja,description_zh,requires_reservation,min_age,safety_note_ko,active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1)").bind(a.id,a.placeId,...a.titles,...a.descriptions,a.reservation?1:0,a.minAge,a.safety)));
   await d1.prepare("PRAGMA optimize").run();
   initialized=true;
