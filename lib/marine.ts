@@ -1,8 +1,10 @@
 import { getDb } from "../db";
 import { conditionSnapshots } from "../db/schema";
+import { openMeteoAdapter } from "./adapters/open-meteo";
+import type {ProviderReference} from "./adapters/contracts";
 
 export type MarinePlace={id:string;latitude:number;longitude:number;baselineCrowd:number;activityKind?:string};
-export type LiveCondition={temperature:number;precipitation:number;windSpeed:number;waveHeight:number;waterTemperature:number;crowdEstimate:number;observedAt:string;dataStatus:{weather:"live_forecast"|"fallback";marine:"live_forecast"|"fallback";crowd:"estimated"};sources:string[]};
+export type LiveCondition={temperature:number;precipitation:number;windSpeed:number;waveHeight:number;waterTemperature:number;crowdEstimate:number;observedAt:string;dataStatus:{weather:"live_forecast"|"fallback";marine:"live_forecast"|"fallback";crowd:"estimated"};sources:string[];providerReferences:ProviderReference[]};
 
 function crowdEstimate(base:number,date=new Date()){
   const hour=date.getHours(); const weekend=[0,6].includes(date.getDay());
@@ -11,14 +13,8 @@ function crowdEstimate(base:number,date=new Date()){
 }
 
 export async function getLiveCondition(place:MarinePlace):Promise<LiveCondition>{
-  const weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,precipitation,wind_speed_10m&wind_speed_unit=ms&timezone=Asia%2FSeoul`;
-  const marineUrl=`https://marine-api.open-meteo.com/v1/marine?latitude=${place.latitude}&longitude=${place.longitude}&hourly=wave_height,sea_surface_temperature&forecast_days=1&timezone=Asia%2FSeoul`;
-  const [weatherResponse,marineResponse]=await Promise.all([fetch(weatherUrl),fetch(marineUrl)]);
-  if(!weatherResponse.ok||!marineResponse.ok) throw new Error("Live condition provider unavailable");
-  const weather=await weatherResponse.json() as any; const marine=await marineResponse.json() as any;
-  const now=new Date(); const target=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}T${String(now.getHours()).padStart(2,"0")}:00`;
-  const index=Math.max(0,marine.hourly.time.indexOf(target));
-  const result:LiveCondition={temperature:weather.current.temperature_2m,precipitation:weather.current.precipitation,windSpeed:weather.current.wind_speed_10m,waveHeight:marine.hourly.wave_height[index]??0,waterTemperature:marine.hourly.sea_surface_temperature[index]??0,crowdEstimate:crowdEstimate(place.baselineCrowd,now),observedAt:new Date().toISOString(),dataStatus:{weather:"live_forecast",marine:"live_forecast",crowd:"estimated"},sources:["Open-Meteo Weather API","Open-Meteo Marine API"]};
+  const current=await openMeteoAdapter.getCurrent({latitude:place.latitude,longitude:place.longitude});const now=new Date();
+  const result:LiveCondition={temperature:current.temperature,precipitation:current.precipitation,windSpeed:current.windSpeed,waveHeight:current.waveHeight,waterTemperature:current.waterTemperature,crowdEstimate:crowdEstimate(place.baselineCrowd,now),observedAt:current.weatherObservedAt,dataStatus:{weather:"live_forecast",marine:"live_forecast",crowd:"estimated"},sources:current.providers.map(provider=>provider.label),providerReferences:current.providers};
   await getDb().insert(conditionSnapshots).values({placeId:place.id,observedAt:result.observedAt,temperature:result.temperature,precipitation:result.precipitation,windSpeed:result.windSpeed,waveHeight:result.waveHeight,waterTemperature:result.waterTemperature,source:"open-meteo"});
   return result;
 }
@@ -26,7 +22,7 @@ export async function getLiveCondition(place:MarinePlace):Promise<LiveCondition>
 export async function getConditionWithFallback(place:MarinePlace):Promise<LiveCondition>{
   try{return await getLiveCondition(place)}catch{
     const wave=place.activityKind==="surf"?.85:place.activityKind==="walk"?.7:.45;
-    return {temperature:26,precipitation:0,windSpeed:3.5,waveHeight:wave,waterTemperature:24,crowdEstimate:crowdEstimate(place.baselineCrowd),observedAt:new Date().toISOString(),dataStatus:{weather:"fallback",marine:"fallback",crowd:"estimated"},sources:["Stored baseline conditions"]};
+    return {temperature:26,precipitation:0,windSpeed:3.5,waveHeight:wave,waterTemperature:24,crowdEstimate:crowdEstimate(place.baselineCrowd),observedAt:new Date().toISOString(),dataStatus:{weather:"fallback",marine:"fallback",crowd:"estimated"},sources:["Stored baseline conditions"],providerReferences:[]};
   }
 }
 

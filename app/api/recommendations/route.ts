@@ -9,6 +9,6 @@ export async function GET(request:Request){
     const activeKinds=new Set(["surf","sup","kayak","yacht","swim"]);
     const recommendations=enriched.filter(item=>category==="all"||(category==="activity"?item.categories.includes("activity")&&activeKinds.has(item.kind):item.categories.includes(category))).sort((a,b)=>b.scores.total-a.scores.total);
     const hasFallback=enriched.some(item=>item.conditionStatus.weather==="fallback"||item.conditionStatus.marine==="fallback");
-    return Response.json({recommendations,places:enriched,meta:{generatedAt:new Date().toISOString(),weatherMarine:hasFallback?"fallback":"live_forecast",crowd:"estimated",database:"D1"}});
+    return Response.json({recommendations,places:enriched,meta:{generatedAt:new Date().toISOString(),weatherMarine:hasFallback?"fallback":"live_forecast",crowd:"estimated",database:"D1",providers:{weather:"Open-Meteo Weather API",marine:"Open-Meteo Marine Weather API",places:"curated D1 catalog",activities:"curated D1 catalog"},providerRegistry:"/api/providers"}});
   }catch(error){return Response.json({error:error instanceof Error?error.message:"Unable to generate recommendations"},{status:502})}
 }
