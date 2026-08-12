@@ -1,0 +1,49 @@
+.win-actions .primary {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: white;
+}
+
+.method {
+  scroll-margin-top: 20px;
+}
+
+.method > div {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.method article {
+  background: white;
+  border: 1px solid #d8e5e4;
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: left;
+}
+
+.method article > span {
+  background: none;
+  border-radius: 0;
+  display: block;
+  font-size: 27px;
+  margin-bottom: 17px;
+  padding: 0;
+}
+
+.method article h3 {
+  font-size: 17px;
+  letter-spacing: -.025em;
+  margin: 0 0 9px;
+}
+
+.method article p {
+  color: #667d84;
+  font-size: 10px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+@media (max-width: 800px) {
+  .method > div { grid-template-columns: 1fr; }
+  .method article { padding: 23px 20px; }
+}
