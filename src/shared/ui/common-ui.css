@@ -1,0 +1,6 @@
+.common-page-shell{min-height:100dvh;display:grid;place-items:center;padding:24px;background:#f4f0e5;color:#113044}
+.common-card{width:min(100%,560px);padding:clamp(24px,5vw,44px);border:1px solid #ddd6c6;border-radius:24px;background:#fff;box-shadow:0 18px 44px rgba(7,62,89,.08)}
+.common-card h1{font-size:clamp(32px,7vw,52px);margin:8px 0 12px;letter-spacing:-.045em}.common-card p{line-height:1.7;color:#607780}
+.common-eyebrow{font-size:11px!important;font-weight:800;letter-spacing:.14em;color:#16877b!important}
+.common-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin-top:16px;padding:10px 16px;border:0;border-radius:999px;background:#073e59;color:#fff;text-decoration:none;font-weight:750}
+@media(max-width:640px){.common-page-shell{padding:16px}.common-card{border-radius:18px}}

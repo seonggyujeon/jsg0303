@@ -10,7 +10,7 @@ type TourResponse={response?:{header?:{resultCode?:string;resultMsg?:string};bod
 function itemsFrom(payload:unknown):TourItem[]{
   if(!payload||typeof payload!=="object")throw new Error("TourAPI response is not an object");const response=(payload as TourResponse).response;if(!response)throw new Error("TourAPI response.response is missing");
   if(response.header?.resultCode!=="0000")throw new Error(`TourAPI ${response.header?.resultCode??"UNKNOWN"}: ${response.header?.resultMsg??"request failed"}`);
-  const item=response.body?.items&&response.body.items!==""?response.body.items.item:undefined;return item?Array.isArray(item)?item:[item]:[];
+  const items=response.body?.items;if(!items||typeof items==="string")return [];const item=items.item;return item?Array.isArray(item)?item:[item]:[];
 }
 
 export class TourApiAdapter implements PlaceSearchAdapter{

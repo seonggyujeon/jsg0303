@@ -7,3 +7,19 @@
 .result-list article{background:#fff;border:1px solid #ddd6c6;color:var(--ink);box-shadow:0 5px 14px rgba(7,62,89,.035)}.result-list article.unsafe{border-color:#e49b78;background:#fffaf6}.place-rank{color:#16877b}.place-main small{color:#4c8089}.place-main span{color:#607780}.place-score b{color:var(--orange)}.place-score small{color:#16877b}
 .method{background:#faf8f1;border-bottom:1px solid #e0d9c8}.method article{border-color:#ddd6c6;box-shadow:0 6px 18px rgba(7,62,89,.035)}
 @media(max-width:800px){.ranking{padding-top:52px}.rank-top{padding-bottom:3px}}
+
+/* Softer, rounded typography with subtle depth instead of a rigid grid-like tone. */
+body{font-family:ui-rounded,"Arial Rounded MT Bold","Trebuchet MS","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:-.018em}
+.overline,.rank-top span,.list-head span,.place-rank{font-family:inherit;letter-spacing:.1em}
+.compare-hero h1,.rank-top h2,.list-head h2,.winner-title h3,.guide-heading h2,.directions-heading h2{font-weight:750;letter-spacing:-.045em;text-shadow:0 2px 0 rgba(255,255,255,.8),0 8px 22px rgba(7,62,89,.09)}
+.logo,.activity-filter button,.people-filter>span,.activity-filter>span{font-weight:750}
+
+.featured-results article{box-shadow:0 10px 24px rgba(7,62,89,.07)}
+.secondary-list-head{margin-top:58px;padding-top:26px}
+.secondary-list-head h2{max-width:760px;font-size:clamp(25px,3.3vw,38px)}
+.other-results{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.other-results article{grid-template-columns:32px 46px minmax(0,1fr) auto;padding:14px;box-shadow:none;background:rgba(255,255,255,.72)}
+.other-results .place-main h3{font-size:14px}
+.available-mark{width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:#e5f2ed;color:#16877b;letter-spacing:0}
+.availability-badge{border:1px solid #c7ddd4;background:#eef7f3;color:#16786f;border-radius:999px;padding:7px 9px;font-size:8px;font-weight:800;white-space:nowrap}
+@media(max-width:800px){.other-results{grid-template-columns:1fr}.other-results article{grid-template-columns:28px 38px minmax(0,1fr) auto}.secondary-list-head{margin-top:44px}.secondary-list-head h2{font-size:23px}}
