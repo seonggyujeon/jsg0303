@@ -68,6 +68,7 @@ export function SettingsScreen() {
           </article>
         </section>
       ) : undefined}
+      hideIntro
       number="05"
       onSlotActivate={() => setIsOpen((current) => !current)}
       slot={getContentModuleSlot("settings")}

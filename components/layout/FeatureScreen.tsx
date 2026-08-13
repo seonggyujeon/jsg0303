@@ -14,6 +14,7 @@ export function FeatureScreen({
   footer,
   onSlotActivate,
   slotActionLabel,
+  hideIntro = false,
 }: {
   number: string;
   title: LocalizedText;
@@ -22,16 +23,17 @@ export function FeatureScreen({
   footer?: ReactNode;
   onSlotActivate?: () => void;
   slotActionLabel?: string;
+  hideIntro?: boolean;
 }) {
   const { locale } = useAppFlow();
   const activeLocale = locale ?? "en";
   return (
     <main className="ol-feature-screen">
-      <section className="ol-feature-screen__intro">
+      {!hideIntro && <section className="ol-feature-screen__intro">
         <p>OCEAN LOG · {number}</p>
         <h1>{title[activeLocale]}</h1>
         <span>{description[activeLocale]}</span>
-      </section>
+      </section>}
       <ContentModuleSlot actionLabel={slotActionLabel} onActivate={onSlotActivate} slot={slot} />
       {footer}
     </main>

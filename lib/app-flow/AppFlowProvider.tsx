@@ -57,7 +57,7 @@ export function AppFlowProvider({ children }: { children: ReactNode }) {
     updatePersistedState((current) => ({
       ...current,
       downloadComplete: true,
-      onboardingComplete: current.locale !== null,
+      onboardingComplete: false,
     }));
   }, [updatePersistedState]);
 
