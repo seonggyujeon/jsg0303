@@ -13,6 +13,9 @@ import "../app/theme.css";
 import "../app/directions.css";
 import "../app/light-theme.css";
 import "../app/ocean-log.css";
+import "../app/community.css";
+import "../app/place-photos.css";
+import "../app/admin-mode.css";
 
 const root = document.getElementById("root");
 

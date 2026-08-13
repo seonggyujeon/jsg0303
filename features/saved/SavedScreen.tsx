@@ -134,7 +134,10 @@ export function SavedScreen() {
   };
 
   return <main className="ol-community-screen">
-    <header className="ol-community-intro"><p>{t("kicker")}</p><h1>{t("title")}</h1><span>{t("description")}</span></header>
+    <header className="ol-community-intro">
+      <div className="ol-community-intro__copy"><p>{t("kicker")}</p><h1>{t("title")}</h1><span>{t("description")}</span><div className="ol-community-tags" aria-hidden="true"><i>PHOTO</i><i>VIDEO</i><i>REVIEW</i></div></div>
+      <div className="ol-community-collage" aria-hidden="true"><img alt="" src="/place-photos/gwangalli.jpg" /><img alt="" src="/place-photos/oryukdo.jpg" /><img alt="" src="/place-photos/dadaepo.jpg" /><span>OCEAN<br />MEMORY</span></div>
+    </header>
     <div className="ol-community-columns">
       <section className="ol-community-panel ol-community-composer">
         <div className="ol-community-panel__heading"><span>01</span><div><h2>{t("create")}</h2><p>{t("createHint")}</p></div></div>
@@ -149,7 +152,7 @@ export function SavedScreen() {
       </section>
       <section className="ol-community-panel ol-community-feed">
         <div className="ol-community-panel__heading"><span>02</span><div><h2>{t("feed")}</h2><p>{t("feedHint")}</p></div>{isAdmin && <strong className="ol-admin-badge">{t("adminActive")}</strong>}</div>
-        {posts.length === 0 ? <div className="ol-community-empty"><span aria-hidden="true">◌</span><p>{t("empty")}</p></div> : <div className="ol-community-posts">
+        {posts.length === 0 ? <div className="ol-community-empty"><div className="ol-community-empty__post" aria-hidden="true"><span>OCEAN LOG</span><div /><i /><i /></div><p>{t("empty")}</p></div> : <div className="ol-community-posts">
           {posts.map((post) => <article className="ol-community-post" key={post.id}>
             <MediaGallery media={post.media} />
             <div className="ol-community-post__body">
