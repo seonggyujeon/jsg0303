@@ -38,6 +38,7 @@ export function formatTemperature(celsius: number, unit: TemperatureUnit): strin
 
 export function formatDistance(kilometers: number, unit: DistanceUnit): string {
   if (unit === "mile") return `${(kilometers * 0.621371).toFixed(1)} mile`;
+  if (kilometers >= 1) return `${kilometers.toFixed(1)} km`;
   const meters = Math.round(kilometers * 1000);
   return `${new Intl.NumberFormat().format(meters)} m`;
 }
