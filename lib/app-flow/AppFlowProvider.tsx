@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { DEFAULT_LOCALE, toDocumentLanguage } from "@/lib/i18n/config";
-import { INITIAL_APP_FLOW, readAppFlow, writeAppFlow } from "@/lib/app-flow/storage";
+import { clearAppSessionReady, INITIAL_APP_FLOW, markAppSessionReady, readAppFlow, writeAppFlow } from "@/lib/app-flow/storage";
 import type { AppFlowState, PersistedAppFlow } from "@/types/app-flow";
 import type { AppLocale } from "@/types/i18n";
 
@@ -56,6 +56,7 @@ export function AppFlowProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const markDownloadComplete = useCallback(() => {
+    markAppSessionReady();
     updatePersistedState((current) => ({
       ...current,
       downloadComplete: true,
@@ -73,6 +74,7 @@ export function AppFlowProvider({ children }: { children: ReactNode }) {
   }, [updatePersistedState]);
 
   const restartOnboarding = useCallback(() => {
+    clearAppSessionReady();
     updatePersistedState((current) => ({
       ...current,
       locale: null,
@@ -82,6 +84,7 @@ export function AppFlowProvider({ children }: { children: ReactNode }) {
   }, [updatePersistedState]);
 
   const completeLanguageSelection = useCallback((locale: AppLocale) => {
+    markAppSessionReady();
     updatePersistedState((current) => ({
       ...current,
       locale,

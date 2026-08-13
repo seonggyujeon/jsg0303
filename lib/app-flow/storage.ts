@@ -2,6 +2,7 @@ import { isAppLocale } from "@/lib/i18n/config";
 import type { PersistedAppFlow } from "@/types/app-flow";
 
 const STORAGE_KEY = "ocean-log:app-flow:v3";
+const SESSION_READY_KEY = "ocean-log:language-ready:v1";
 
 export const INITIAL_APP_FLOW: PersistedAppFlow = {
   version: 3,
@@ -20,14 +21,31 @@ export function readAppFlow(): PersistedAppFlow {
     }
     const parsed = JSON.parse(value) as Partial<PersistedAppFlow>;
     if (parsed.version !== 3) return INITIAL_APP_FLOW;
+    const sessionReady = window.sessionStorage.getItem(SESSION_READY_KEY) === "true";
     return {
       version: 3,
       locale: isAppLocale(parsed.locale) ? parsed.locale : null,
       downloadComplete: parsed.downloadComplete === true,
-      onboardingComplete: parsed.onboardingComplete === true && isAppLocale(parsed.locale),
+      onboardingComplete: sessionReady && parsed.onboardingComplete === true && isAppLocale(parsed.locale),
     };
   } catch {
     return INITIAL_APP_FLOW;
+  }
+}
+
+export function markAppSessionReady(): void {
+  try {
+    window.sessionStorage.setItem(SESSION_READY_KEY, "true");
+  } catch {
+    // The in-memory flow still works if private browsing blocks storage.
+  }
+}
+
+export function clearAppSessionReady(): void {
+  try {
+    window.sessionStorage.removeItem(SESSION_READY_KEY);
+  } catch {
+    // The in-memory flow still works if private browsing blocks storage.
   }
 }
 
