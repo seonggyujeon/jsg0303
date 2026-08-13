@@ -13,6 +13,7 @@ import "./light-theme.css";
 import "./ocean-log.css";
 import "./community.css";
 import "./place-photos.css";
+import "./admin-mode.css";
 import { AppProviders } from "@/components/app/AppProviders";
 
 export const metadata: Metadata = {

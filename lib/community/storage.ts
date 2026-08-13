@@ -78,3 +78,15 @@ export async function readCommunityMedia(id: string): Promise<Blob | null> {
   database.close();
   return result;
 }
+
+export async function deleteCommunityMedia(media: CommunityMedia[]): Promise<void> {
+  if (media.length === 0) return;
+  const database = await openMediaDatabase();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(MEDIA_STORE, "readwrite");
+    media.forEach((item) => transaction.objectStore(MEDIA_STORE).delete(item.id));
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+  database.close();
+}

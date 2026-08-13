@@ -3,8 +3,9 @@
 /* eslint-disable jsx-a11y/media-has-caption, @next/next/no-img-element -- User-selected local media uses object URLs and does not include separate caption tracks. */
 
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useAdminMode } from "@/lib/admin/AdminModeProvider";
 import { useAppFlow } from "@/lib/app-flow/AppFlowProvider";
-import { readCommunityMedia, readCommunityPosts, saveCommunityMedia, writeCommunityPosts, type CommunityMedia, type CommunityPost } from "@/lib/community/storage";
+import { deleteCommunityMedia, readCommunityMedia, readCommunityPosts, saveCommunityMedia, writeCommunityPosts, type CommunityMedia, type CommunityPost } from "@/lib/community/storage";
 import type { AppLocale, LocalizedText } from "@/types/i18n";
 
 const COPY = {
@@ -25,6 +26,9 @@ const COPY = {
   send: { ko: "등록", zh: "发送", ja: "送信", en: "Post" },
   mediaRequired: { ko: "사진이나 동영상을 하나 이상 추가해 주세요.", zh: "请至少添加一张照片或一个视频。", ja: "写真または動画を1つ以上追加してください。", en: "Add at least one photo or video." },
   sizeError: { ko: "파일 하나당 50MB 이하로 올려주세요.", zh: "每个文件需小于50MB。", ja: "1ファイル50MB以下で追加してください。", en: "Keep each file under 50MB." },
+  adminActive: { ko: "관리자 모드", zh: "管理员模式", ja: "管理者モード", en: "Admin mode" },
+  deletePost: { ko: "게시물 삭제", zh: "删除帖子", ja: "投稿を削除", en: "Delete post" },
+  deleteConfirm: { ko: "이 게시물과 첨부된 사진·동영상을 삭제할까요?", zh: "要删除此帖子及其照片和视频吗？", ja: "この投稿と添付された写真・動画を削除しますか？", en: "Delete this post and its attached photos and videos?" },
 } satisfies Record<string, LocalizedText>;
 
 const localeTag: Record<AppLocale, string> = { ko: "ko-KR", zh: "zh-CN", ja: "ja-JP", en: "en-US" };
@@ -57,6 +61,7 @@ function MediaGallery({ media }: { media: CommunityMedia[] }) {
 
 export function SavedScreen() {
   const { locale } = useAppFlow();
+  const { isAdmin } = useAdminMode();
   const activeLocale = locale ?? "en";
   const t = (key: keyof typeof COPY) => COPY[key][activeLocale];
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -120,6 +125,14 @@ export function SavedScreen() {
     setCommentDrafts((current) => ({ ...current, [postId]: "" }));
   };
 
+  const removePost = async (post: CommunityPost) => {
+    if (!isAdmin || !window.confirm(t("deleteConfirm"))) return;
+    await deleteCommunityMedia(post.media);
+    const next = posts.filter((item) => item.id !== post.id);
+    setPosts(next);
+    writeCommunityPosts(next);
+  };
+
   return <main className="ol-community-screen">
     <header className="ol-community-intro"><p>{t("kicker")}</p><h1>{t("title")}</h1><span>{t("description")}</span></header>
     <div className="ol-community-columns">
@@ -135,12 +148,12 @@ export function SavedScreen() {
         </form>
       </section>
       <section className="ol-community-panel ol-community-feed">
-        <div className="ol-community-panel__heading"><span>02</span><div><h2>{t("feed")}</h2><p>{t("feedHint")}</p></div></div>
+        <div className="ol-community-panel__heading"><span>02</span><div><h2>{t("feed")}</h2><p>{t("feedHint")}</p></div>{isAdmin && <strong className="ol-admin-badge">{t("adminActive")}</strong>}</div>
         {posts.length === 0 ? <div className="ol-community-empty"><span aria-hidden="true">◌</span><p>{t("empty")}</p></div> : <div className="ol-community-posts">
           {posts.map((post) => <article className="ol-community-post" key={post.id}>
             <MediaGallery media={post.media} />
             <div className="ol-community-post__body">
-              <div className="ol-community-post__meta"><span>{"★".repeat(post.rating)}{"☆".repeat(5 - post.rating)}</span><time>{new Intl.DateTimeFormat(localeTag[activeLocale], { dateStyle: "medium" }).format(new Date(post.createdAt))}</time></div>
+              <div className="ol-community-post__meta"><span>{"★".repeat(post.rating)}{"☆".repeat(5 - post.rating)}</span><div><time>{new Intl.DateTimeFormat(localeTag[activeLocale], { dateStyle: "medium" }).format(new Date(post.createdAt))}</time>{isAdmin && <button onClick={() => removePost(post)} type="button">{t("deletePost")}</button>}</div></div>
               {post.caption && <p>{post.caption}</p>}
               <div className="ol-comments">
                 {post.comments.map((comment) => <p key={comment.id}><span aria-hidden="true">◜</span>{comment.text}</p>)}

@@ -1,0 +1,76 @@
+.ol-admin-card form {
+  display: grid;
+  gap: 8px;
+}
+
+.ol-admin-card form > label {
+  color: var(--ol-muted);
+  font-size: 11px;
+}
+
+.ol-admin-card form > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+}
+
+.ol-admin-card input {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(22, 125, 161, 0.22);
+  border-radius: 13px;
+  outline: none;
+  font: inherit;
+}
+
+.ol-admin-card input:focus {
+  border-color: var(--ol-blue);
+  box-shadow: 0 0 0 3px rgba(22, 125, 161, 0.1);
+}
+
+.ol-admin-card form button {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 13px;
+  color: #fff;
+  background: var(--ol-blue-deep);
+  font-weight: 750;
+}
+
+.ol-admin-card form button:disabled { opacity: 0.45; }
+.ol-admin-card form > p { margin: 0; color: #b04435; font-size: 11px; }
+.ol-admin-card .ol-admin-exit { background: #8f3d32; }
+
+.ol-admin-badge {
+  margin-left: auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #fff;
+  background: #8f3d32;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.ol-community-post__meta > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ol-community-post__meta button {
+  padding: 5px 7px;
+  border: 1px solid rgba(176, 68, 53, 0.28);
+  border-radius: 8px;
+  color: #a13e32;
+  background: #fff6f4;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+@media (max-width: 480px) {
+  .ol-admin-card form > div { grid-template-columns: 1fr; }
+  .ol-community-post__meta { align-items: flex-start; }
+  .ol-community-post__meta > div { align-items: flex-end; flex-direction: column; }
+}
