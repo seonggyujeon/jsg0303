@@ -8,7 +8,7 @@ import { LanguageScreen } from "@/features/onboarding/LanguageScreen";
 
 export function OnboardingFlow() {
   const router = useRouter();
-  const { hydrated, phase, markDownloadComplete } = useAppFlow();
+  const { hydrated, phase, markDownloadComplete, selectOnboardingLanguage } = useAppFlow();
 
   useEffect(() => {
     if (hydrated && phase === "main") router.replace("/home");
@@ -23,5 +23,5 @@ export function OnboardingFlow() {
   }
 
   if (phase === "download") return <DownloadScreen onComplete={finishDownload} />;
-  return <LanguageScreen />;
+  return <LanguageScreen onSelected={selectOnboardingLanguage} />;
 }

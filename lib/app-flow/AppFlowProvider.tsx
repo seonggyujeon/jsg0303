@@ -16,11 +16,13 @@ interface AppFlowContextValue extends AppFlowState {
 const AppFlowContext = createContext<AppFlowContextValue | null>(null);
 
 function toState(persisted: PersistedAppFlow, hydrated: boolean): AppFlowState {
-  const phase = !persisted.downloadComplete
-    ? "download"
-    : !persisted.onboardingComplete
+  const phase = persisted.onboardingComplete
+    ? "main"
+    : !persisted.locale
       ? "language"
-      : "main";
+      : !persisted.downloadComplete
+        ? "download"
+        : "language";
   return { ...persisted, hydrated, phase };
 }
 
@@ -57,7 +59,7 @@ export function AppFlowProvider({ children }: { children: ReactNode }) {
     updatePersistedState((current) => ({
       ...current,
       downloadComplete: true,
-      onboardingComplete: false,
+      onboardingComplete: current.locale !== null,
     }));
   }, [updatePersistedState]);
 
