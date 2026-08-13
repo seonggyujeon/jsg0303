@@ -1,46 +1,66 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { supabase } from "@/lib/supabase/client";
 
-const SESSION_KEY = "ocean-log:admin-mode:v1";
-const ADMIN_PASSWORD_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
+const SESSION_KEY = "ocean-log:admin-token:v2";
 
 interface AdminModeContextValue {
   isAdmin: boolean;
+  adminToken: string | null;
   activateAdminMode: (password: string) => Promise<boolean>;
   deactivateAdminMode: () => void;
 }
 
 const AdminModeContext = createContext<AdminModeContextValue | null>(null);
 
-async function hashPassword(password: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+function isTokenCurrent(token: string): boolean {
+  try {
+    const encodedPayload = token.split(".")[0];
+    const normalized = encodedPayload.replaceAll("-", "+").replaceAll("_", "/");
+    const paddedPayload = normalized + "=".repeat((4 - normalized.length % 4) % 4);
+    const payload = JSON.parse(atob(paddedPayload)) as { exp?: number };
+    return typeof payload.exp === "number" && payload.exp > Math.floor(Date.now() / 1000);
+  } catch {
+    return false;
+  }
 }
 
 export function AdminModeProvider({ children }: { children: ReactNode }) {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminToken, setAdminToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const hydrationTask = window.setTimeout(() => setIsAdmin(window.sessionStorage.getItem(SESSION_KEY) === "active"), 0);
+    const hydrationTask = window.setTimeout(() => {
+      const storedToken = window.sessionStorage.getItem(SESSION_KEY);
+      if (storedToken && isTokenCurrent(storedToken)) setAdminToken(storedToken);
+      else window.sessionStorage.removeItem(SESSION_KEY);
+    }, 0);
     return () => window.clearTimeout(hydrationTask);
   }, []);
 
   const activateAdminMode = useCallback(async (password: string) => {
-    const accepted = await hashPassword(password) === ADMIN_PASSWORD_HASH;
-    if (accepted) {
-      window.sessionStorage.setItem(SESSION_KEY, "active");
-      setIsAdmin(true);
-    }
-    return accepted;
+    const { data, error } = await supabase.functions.invoke<{ token?: string }>("community-admin", {
+      body: { action: "login", password },
+    });
+    const token = data?.token;
+    if (error || !token || !isTokenCurrent(token)) return false;
+    window.sessionStorage.setItem(SESSION_KEY, token);
+    setAdminToken(token);
+    return true;
   }, []);
 
   const deactivateAdminMode = useCallback(() => {
     window.sessionStorage.removeItem(SESSION_KEY);
-    setIsAdmin(false);
+    setAdminToken(null);
   }, []);
 
-  const value = useMemo(() => ({ isAdmin, activateAdminMode, deactivateAdminMode }), [activateAdminMode, deactivateAdminMode, isAdmin]);
+  const value = useMemo(() => ({
+    isAdmin: adminToken !== null,
+    adminToken,
+    activateAdminMode,
+    deactivateAdminMode,
+  }), [activateAdminMode, adminToken, deactivateAdminMode]);
+
   return <AdminModeContext.Provider value={value}>{children}</AdminModeContext.Provider>;
 }
 
