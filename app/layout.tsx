@@ -11,6 +11,8 @@ import "./theme.css";
 import "./directions.css";
 import "./light-theme.css";
 import "./ocean-log.css";
+import "./community.css";
+import "./place-photos.css";
 import { AppProviders } from "@/components/app/AppProviders";
 
 export const metadata: Metadata = {
