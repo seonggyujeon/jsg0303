@@ -1,0 +1,66 @@
+name: Build Ocean Log iOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "mobile/**"
+      - ".github/workflows/build-ios.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package.json
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm install
+
+      - name: Generate iOS project
+        working-directory: mobile
+        run: npx cap add ios
+
+      - name: Sync Capacitor iOS
+        working-directory: mobile
+        run: npx cap sync ios
+
+      - name: Build iOS Simulator app
+        working-directory: mobile
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package simulator app
+        working-directory: mobile
+        run: |
+          cd build/Build/Products/Debug-iphonesimulator
+          ditto -c -k --sequesterRsrc --keepParent App.app ocean-log-ios-simulator.zip
+
+      - name: Upload iOS simulator build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocean-log-ios-simulator
+          path: mobile/build/Build/Products/Debug-iphonesimulator/ocean-log-ios-simulator.zip
+          if-no-files-found: error
+          retention-days: 14
