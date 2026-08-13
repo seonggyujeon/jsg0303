@@ -2,7 +2,7 @@
 
 /* eslint-disable jsx-a11y/media-has-caption, @next/next/no-img-element -- Community media can be user-provided videos and remote images. */
 
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAdminMode } from "@/lib/admin/AdminModeProvider";
 import { useAppFlow } from "@/lib/app-flow/AppFlowProvider";
 import { createCommunityComment, createCommunityPost, deleteCommunityPost, readCommunityPosts, type CommunityMedia, type CommunityPost } from "@/lib/community/storage";
@@ -23,6 +23,8 @@ const COPY = {
   feed: { ko: "여행자 후기", zh: "旅行者体验", ja: "旅人の投稿", en: "Traveler stories" },
   feedHint: { ko: "게시물 아래 말풍선에서 코멘트를 나눌 수 있어요.", zh: "可在每篇帖子下方留言交流。", ja: "投稿の下からコメントできます。", en: "Join the conversation below each post." },
   loading: { ko: "여행자 후기를 불러오는 중이에요…", zh: "正在加载旅行者体验…", ja: "旅人の投稿を読み込んでいます…", en: "Loading traveler stories…" },
+  refresh: { ko: "새로고침", zh: "刷新", ja: "更新", en: "Refresh" },
+  syncing: { ko: "동기화 중…", zh: "同步中…", ja: "同期中…", en: "Syncing…" },
   empty: { ko: "아직 올라온 후기가 없어요. 첫 바다 이야기를 남겨보세요.", zh: "还没有体验分享，发布第一篇吧。", ja: "まだ投稿がありません。最初の海の思い出を残しましょう。", en: "No stories yet. Share the first coast memory." },
   comment: { ko: "코멘트를 남겨주세요", zh: "写下评论", ja: "コメントを書く", en: "Write a comment" },
   send: { ko: "등록", zh: "发送", ja: "送信", en: "Post" },
@@ -59,18 +61,39 @@ export function SavedScreen() {
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
+  const loadFeed = useCallback(async (initial = false) => {
+    if (initial) setLoading(true);
+    else setSyncing(true);
+    try {
+      setPosts(await readCommunityPosts());
+      setError("");
+    } catch {
+      setError(COPY.loadError[activeLocale]);
+    } finally {
+      if (initial) setLoading(false);
+      else setSyncing(false);
+    }
+  }, [activeLocale]);
+
   useEffect(() => {
-    let active = true;
-    readCommunityPosts()
-      .then((nextPosts) => { if (active) setPosts(nextPosts); })
-      .catch(() => { if (active) setError(t("loadError")); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  // The feed is loaded once on entry; locale changes are handled by the surrounding flow.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const initialSync = window.setTimeout(() => void loadFeed(true), 0);
+    const syncInterval = window.setInterval(() => void loadFeed(), 8000);
+    const syncWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadFeed();
+    };
+    const syncWhenFocused = () => void loadFeed();
+    document.addEventListener("visibilitychange", syncWhenVisible);
+    window.addEventListener("focus", syncWhenFocused);
+    return () => {
+      window.clearTimeout(initialSync);
+      window.clearInterval(syncInterval);
+      document.removeEventListener("visibilitychange", syncWhenVisible);
+      window.removeEventListener("focus", syncWhenFocused);
+    };
+  }, [loadFeed]);
 
   const previews = useMemo(() => files.map((file) => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach(({ url }) => URL.revokeObjectURL(url)), [previews]);
@@ -152,7 +175,7 @@ export function SavedScreen() {
         </form>
       </section>
       <section className="ol-community-panel ol-community-feed">
-        <div className="ol-community-panel__heading"><span>02</span><div><h2>{t("feed")}</h2><p>{t("feedHint")}</p></div>{isAdmin && <strong className="ol-admin-badge">{t("adminActive")}</strong>}</div>
+        <div className="ol-community-panel__heading"><span>02</span><div><h2>{t("feed")}</h2><p>{t("feedHint")}</p></div><div className="ol-community-heading-actions">{isAdmin && <strong className="ol-admin-badge">{t("adminActive")}</strong>}<button className="ol-community-refresh" disabled={syncing} onClick={() => void loadFeed()} type="button">↻ {syncing ? t("syncing") : t("refresh")}</button></div></div>
         {loading ? <div className="ol-community-empty"><p>{t("loading")}</p></div> : posts.length === 0 ? <div className="ol-community-empty"><div className="ol-community-empty__post" aria-hidden="true"><span>OCEAN LOG</span><div /><i /><i /></div><p>{t("empty")}</p></div> : <div className="ol-community-posts">
           {posts.map((post) => <article className="ol-community-post" key={post.id}>
             <MediaGallery media={post.media} />
